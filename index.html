@@ -305,7 +305,6 @@
                         exercises: [
                             { id: 'inf-bulgara', name: 'Sentadilla Búlgara o Zancada estática', sets: 3, dose: '3 series × 10-12 rep por pierna',
                               imgs: [{ src: 'img/gym/sentadilla-bulgara.jpg', label: 'Búlgara' }, { src: 'img/gym/zancada-estatica.jpg', label: 'Zancada' }],
-                              note: 'Si falla el equilibrio, usar máquina Multipower / Smith.',
                               rule: 'Tronco firme y ligeramente inclinado hacia adelante. Si falla el equilibrio, usar máquina Multipower/Smith.' }
                         ]
                     },
@@ -322,7 +321,7 @@
                               imgs: [{ src: 'img/gym/abductor.jpg' }],
                               rule: 'Siéntate erguido, apoyando bien los isquiones (los huesos del culo) y sacando un poco de pecho. Evita escurrir la pelvis hacia adelante hundiendo la lumbar contra el respaldo en forma de "C", ya que eso abriría tu fisura HIZ.' },
                             { id: 'inf-aductor', name: 'Aductor en máquina', sets: 3, dose: '3 series × 12-15 rep',
-                              imgs: [], // TODO: añadir img/gym/aductor.jpg
+                              imgs: [{ src: 'img/gym/aductor.jpg' }],
                               rule: 'Siéntate erguido, apoyando bien los isquiones (los huesos del culo) y sacando un poco de pecho. Evita escurrir la pelvis hacia adelante hundiendo la lumbar contra el respaldo en forma de "C", ya que eso abriría tu fisura HIZ.' }
                         ]
                     },
@@ -334,15 +333,134 @@
                               rule: 'Aguanta totalmente estático, como una tabla paralela al suelo; prohibido hacer repeticiones subiendo y bajando.' }
                         ]
                     }
-                ],
-                footer: {
-                    title: 'Opciones Terapéuticas en Guías Clínicas',
-                    text: 'Durante la franja principal del entrenamiento de las 13:30 a 15:00, y encontrándote bajo los efectos sistémicos del ciclo terapéutico de inhibidor selectivo COX-2, el flujo sanguíneo exige un volumen plasmático óptimo. Mantén una hidratación abundante (mínimo 1-1,5 litros de agua durante la sesión) para favorecer el filtrado renal y la correcta depuración de metabolitos derivados del esfuerzo muscular.'
-                }
+                ]
             },
-            superior: { label: 'Tren Superior', soon: true },
+            espalda: {
+                label: 'Espalda',
+                avoid: [
+                    { name: 'Peso Muerto (Convencional o Rumano)', why: 'Genera cargas extremas sobre el disco vulnerable.' },
+                    { name: 'Remo con barra libre o Remo en T (sin apoyo)', why: 'El cizallamiento destruirá la cicatrización de la fisura.' },
+                    { name: 'Remo Gironda (Polea baja sentado)', why: 'Trampa biomecánica. Aunque parece seguro, casi todo el mundo flexiona la lumbar al estirar los brazos hacia adelante para coger el agarre, abriendo la fisura discal. Evítalo por ahora.' }
+                ],
+                blocks: [
+                    {
+                        tag: 'Bloque A', title: 'Espalda (Tracción Segura)', color: 'emerald',
+                        exercises: [
+                            { id: 'esp-dominadas', name: 'Dominadas (libres o asistidas en máquina)', sets: 3, dose: 'El mejor ejercicio para tu columna', weightLabel: 'Lastre / asistencia',
+                              imgs: [{ src: 'img/gym/dominadas.jpg' }],
+                              note: 'Si usas lastre, colócalo en cinturón pélvico, nunca en chaleco.',
+                              rule: 'Cuelga, aprieta abdomen (sin arquear la espalda baja) y tira.' },
+                            { id: 'esp-jalon', name: 'Jalón al pecho en polea alta', sets: 4, dose: '3-4 series × 10-12 rep',
+                              imgs: [{ src: 'img/gym/jalon-pecho.jpg' }],
+                              rule: 'Tira del agarre hacia la parte alta del pecho, pero no te tumbes hacia atrás. Mantén el torso vertical o con una ligerísima inclinación constante.' },
+                            { id: 'esp-remo', name: 'Remo con pecho apoyado (Chest-Supported / Seal Row)', sets: 4, dose: '4 series × 8-10 rep · ejercicio estrella para grosor de espalda',
+                              imgs: [{ src: 'img/gym/remo-pecho-apoyado.jpg' }],
+                              rule: 'Tumbado boca abajo en un banco inclinado, tira de las mancuernas hacia tu cadera. Carga todo el peso que quieras: tu lumbar está protegida al 100% por el banco.' },
+                            { id: 'esp-pullover', name: 'Pullover en polea alta con cuerda (brazos rectos)', sets: 3, dose: '3 series × 15 rep · gran trabajo dorsal sin compresión vertebral',
+                              imgs: [{ src: 'img/gym/pullover-polea.jpg' }],
+                              rule: 'De pie, con un pie ligeramente adelantado, mantén la espalda neutra (bloqueando el core como en la plancha) y baja la polea con los brazos rectos.' }
+                        ]
+                    }
+                ]
+            },
+            biceps: {
+                label: 'Bíceps',
+                blocks: [
+                    {
+                        tag: 'Bloque B', title: 'Bíceps (Aislamiento sin balanceo)', color: 'emerald',
+                        exercises: [
+                            { id: 'bic-inclinado', name: 'Curl de bíceps en banco inclinado (mancuernas)', sets: 3, dose: '3 series × 10-12 rep', weight: true,
+                              imgs: [{ src: 'img/gym/curl-inclinado.jpg' }],
+                              rule: 'Apoya toda la espalda en el respaldo a unos 60-70 grados. Esto impide que tomes impulso con la zona lumbar (protegiendo las facetas).' },
+                            { id: 'bic-scott', name: 'Curl en banco Scott (predicador)', sets: 3, dose: '3 series × 10-12 rep', weight: true,
+                              imgs: [{ src: 'img/gym/curl-scott.jpg' }],
+                              rule: 'Siéntate ajustando la altura para que el pecho quede pegado al pupitre y tu columna esté recta, no redondeada sobre el cojín.' },
+                            { id: 'bic-martillo', name: 'Curl martillo sentado con respaldo', sets: 3, dose: 'Para el braquial y el antebrazo', weight: true,
+                              imgs: [{ src: 'img/gym/curl-martillo.jpg' }],
+                              rule: 'Al estar sentado y apoyado en el respaldo, eliminas la posibilidad de hiperlordosis compensatoria.' }
+                        ]
+                    }
+                ]
+            },
+            pecho: {
+                label: 'Pecho',
+                avoid: [
+                    { name: 'Press de banca estilo Powerlifting (arco lumbar extremo)', why: 'Destruirá tus facetas articulares.' },
+                    { name: 'Cruces en polea de pie con mucho peso e inclinación frontal', why: 'Arriesga cizallamiento discal.' }
+                ],
+                blocks: [
+                    {
+                        tag: 'Bloque C', title: 'Pecho (Fuerza y Aislamiento Seguro)', color: 'emerald',
+                        exercises: [
+                            { id: 'pec-press', name: 'Press con mancuernas (plano o inclinado)', sets: 4, dose: '4 series × 8-12 rep',
+                              imgs: [{ src: 'img/gym/press-mancuernas.jpg' }],
+                              rule: 'Para borrar el arco lumbar y proteger tus facetas, sube los pies. Apóyalos sobre el extremo del banco o sobre dos discos/cajones altos en el suelo. Esto coloca la pelvis en retroversión neutra y pega toda tu zona lumbar al respaldo.' },
+                            { id: 'pec-flexiones', name: 'Flexiones de brazos estrictas (Push-ups)', sets: 3, dose: '3 series al fallo técnico', weight: false,
+                              imgs: [{ src: 'img/gym/flexiones.jpg' }],
+                              rule: 'Aprieta los glúteos y el abdomen al máximo. Si la cadera se hunde un solo milímetro (arqueando la lumbar), detén la serie; la gravedad hundiría tu columna aplastando las facetas L4-S1.' },
+                            { id: 'pec-contractora', name: 'Máquina contractora (Pec Deck / Mariposa) o cruces sentado', sets: 3, dose: '3 series × 12-15 rep',
+                              imgs: [{ src: 'img/gym/pec-deck.jpg' }],
+                              rule: 'Al estar sentado con la espalda apoyada verticalmente en el respaldo, eliminas todo requerimiento de estabilización sobre el segmento L5-S1. Aísla el pectoral al máximo.' },
+                            { id: 'pec-fondos', name: 'Fondos en paralelas (Dips) para pecho', sets: 3, dose: '3 series × 10 rep', weightLabel: 'Lastre',
+                              imgs: [{ src: 'img/gym/fondos-paralelas.jpg' }],
+                              rule: 'Mantén las piernas ligeramente por delante de tu cuerpo (posición hollow o contracción abdominal). Si dejas que las piernas cuelguen hacia atrás, tu zona lumbar se arqueará bajo carga, pellizcando la sinovitis lumbosacra.' }
+                        ]
+                    }
+                ]
+            },
+            hombros: {
+                label: 'Hombros',
+                avoid: [
+                    { name: 'Press Militar de Pie (con barra o mancuernas)', why: 'Carga axial pura prohibitiva sobre el disco L5-S1.' },
+                    { name: 'Elevaciones frontales pesadas de pie', why: 'Generan un brazo de palanca brutal que tira de tu L5-S1 hacia adelante.' }
+                ],
+                blocks: [
+                    {
+                        tag: 'Bloque A', title: 'Hombros (Desarrollo seguro)', color: 'emerald',
+                        exercises: [
+                            { id: 'hom-press', name: 'Press de hombros sentado con mancuernas', sets: 4, dose: '3-4 series × 8-12 rep', weight: true,
+                              imgs: [{ src: 'img/gym/press-hombros.jpg' }],
+                              rule: 'Ajusta el respaldo no a 90 grados rectos, sino a unos 75-80 grados (ligeramente inclinado hacia atrás). Apoya los pies sobre dos discos o un step bajo para que las rodillas queden más altas que la cadera; esto pega tu zona lumbar al respaldo impidiendo que se arquee.' },
+                            { id: 'hom-laterales', name: 'Elevaciones laterales sentado', sets: 3, dose: '3 series × 12-15 rep', weight: true,
+                              imgs: [{ src: 'img/gym/elevaciones-laterales.jpg' }],
+                              rule: 'Siéntate en un banco sin respaldo o en el borde de uno. Al estar sentado, aislas mejor el deltoides y evitas el balanceo de cadera que daña L5-S1.' },
+                            { id: 'hom-pajaros', name: 'Pájaros para deltoides posterior (Pecho apoyado)', sets: 3, dose: '3 series × 15 rep', weight: true,
+                              imgs: [{ src: 'img/gym/pajaros-deltoides.jpg' }],
+                              rule: 'Usa la máquina contractora inversa (Pec-Deck reverso) o hazlos tumbado boca abajo en un banco inclinado (Chest-supported). Cero carga lumbar.' }
+                        ]
+                    }
+                ]
+            },
+            triceps: {
+                label: 'Tríceps',
+                avoid: [
+                    { name: 'Extensiones de tríceps tras nuca de pie (Copa)', why: 'Fuerzan la lordosis lumbar pellizcando las facetas articulares.' }
+                ],
+                blocks: [
+                    {
+                        tag: 'Bloque B', title: 'Tríceps (Aislamiento analítico)', color: 'emerald',
+                        exercises: [
+                            { id: 'tri-polea', name: 'Extensiones en polea alta (cuerda o barra recta)', sets: 4, dose: '3-4 series × 12-15 rep', weight: true,
+                              imgs: [{ src: 'img/gym/extension-triceps-polea.jpg' }],
+                              rule: 'Se hacen de pie, pero en posición de plancha abdominal de pie: contrae los glúteos y el abdomen al máximo antes de empujar el cable hacia abajo. No te inclines hacia adelante ni saques el culo.' },
+                            { id: 'tri-frances', name: 'Press francés (Skullcrushers) tumbado', sets: 3, dose: '3 series × 10-12 rep', weight: true,
+                              imgs: [{ src: 'img/gym/press-frances.jpg' }],
+                              rule: 'Tumbado bocarriba en el banco plano, sube las piernas y apoya los pies planos sobre el propio banco (o mantenlas en el aire a 90 grados). Esto borra el arco lumbar por completo y protege tus facetas.' },
+                            { id: 'tri-patada', name: 'Patada de tríceps (Kickback) con pecho apoyado', sets: 3, dose: '3 series × 10-12 rep', weight: true,
+                              imgs: [{ src: 'img/gym/patada-triceps.jpg' }],
+                              rule: 'En un banco inclinado boca abajo. Evita hacerlo inclinado apoyando una sola mano en el banco, ya que genera giros (cizallamiento) en la pelvis.' }
+                        ]
+                    }
+                ]
+            },
             core: { label: 'Core', soon: true },
             cardio: { label: 'Cardio', soon: true }
+        };
+
+        // Nota de hidratación común a todas las rutinas
+        const GYM_FOOTER = {
+            title: 'Opciones Terapéuticas en Guías Clínicas',
+            text: 'Durante la franja principal del entrenamiento de las 13:30 a 15:00, y encontrándote bajo los efectos sistémicos del ciclo terapéutico de inhibidor selectivo COX-2, el flujo sanguíneo exige un volumen plasmático óptimo. Mantén una hidratación abundante (mínimo 1-1,5 litros de agua durante la sesión) para favorecer el filtrado renal y la correcta depuración de metabolitos derivados del esfuerzo muscular.'
         };
 
         const COLORS = {
@@ -356,6 +474,15 @@
         let setsDone = JSON.parse(localStorage.getItem(todayKey) || '{}');
         const saveSets = () => localStorage.setItem(todayKey, JSON.stringify(setsDone));
 
+        // Pesos por ejercicio (se guardan siempre, para recordar el último peso usado)
+        const weights = JSON.parse(localStorage.getItem('gym-weights') || '{}');
+        document.addEventListener('input', (e) => {
+            if (!e.target.classList.contains('weight-input')) return;
+            const v = e.target.value.trim();
+            if (v === '') delete weights[e.target.dataset.ex]; else weights[e.target.dataset.ex] = v;
+            localStorage.setItem('gym-weights', JSON.stringify(weights));
+        });
+
         const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
         const eyeIcon = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>';
 
@@ -363,7 +490,7 @@
             const done = setsDone[ex.id] || 0;
             const imgs = ex.imgs.map((im, i) => `
                 <button class="gym-img relative block w-full overflow-hidden rounded-xl bg-slate-950 border border-slate-700 group" data-ex="${ex.id}" data-i="${i}">
-                    <img src="${im.src}" alt="${esc(ex.name)}" loading="lazy" class="w-full aspect-[4/3] object-cover group-hover:scale-105 transition duration-300">
+                    <img src="${im.src}" alt="${esc(ex.name)}" loading="lazy" onerror="this.closest('.gym-img').remove()" class="w-full aspect-[4/3] object-cover group-hover:scale-105 transition duration-300">
                     ${im.label ? `<span class="absolute bottom-2 left-2 text-[11px] font-bold bg-slate-900/85 text-slate-100 px-2 py-0.5 rounded-full">${esc(im.label)}</span>` : ''}
                     <span class="absolute top-2 right-2 bg-slate-900/80 text-slate-200 rounded-full p-1.5">${eyeIcon}</span>
                 </button>`).join('');
@@ -387,6 +514,14 @@
                         <p class="text-sm text-slate-200 leading-relaxed">${esc(ex.rule)}</p>
                     </div>
                     ${ex.note ? `<p class="text-xs text-amber-300 mt-2">⚠ ${esc(ex.note)}</p>` : ''}
+                    ${(ex.weight ?? !ex.timer) ? `
+                    <label class="flex items-center gap-3 mt-4 bg-slate-800/60 border border-slate-700 rounded-xl px-3 py-2">
+                        <span class="text-xs text-slate-400 shrink-0">${esc(ex.weightLabel || 'Peso')}</span>
+                        <input type="number" inputmode="decimal" step="0.5" min="0" placeholder="—"
+                            class="weight-input flex-1 min-w-0 bg-transparent text-right text-lg font-mono font-bold text-emerald-300 placeholder-slate-600 focus:outline-none"
+                            data-ex="${ex.id}" value="${esc(weights[ex.id] ?? '')}">
+                        <span class="text-sm text-slate-400 shrink-0">kg</span>
+                    </label>` : ''}
                     <div class="flex flex-wrap items-center justify-between gap-3 mt-4">
                         <div class="flex items-center gap-2">
                             <span class="text-xs text-slate-500 mr-1">Series</span>${dots}
@@ -400,7 +535,10 @@
             return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
         }
 
-        let currentGymTab = localStorage.getItem('gym-tab') || 'inferior';
+        let currentGymTab = localStorage.getItem('gym-tab');
+        const hashTab = location.hash.startsWith('#gym-') ? location.hash.slice(5) : null;
+        if (GYM[hashTab]) currentGymTab = hashTab;
+        if (!GYM[currentGymTab]) currentGymTab = 'inferior';
 
         function renderGym() {
             document.getElementById('gym-subtabs').innerHTML = Object.entries(GYM).map(([key, r]) => `
@@ -431,6 +569,20 @@
                     <div class="h-2.5 bg-slate-900 rounded-full overflow-hidden"><div id="gym-progress-bar" class="h-full bg-gradient-to-r from-indigo-500 to-emerald-500 transition-all duration-500" style="width:${pct}%"></div></div>
                     <button id="gym-reset" class="text-xs text-slate-500 hover:text-slate-300 mt-2">Reiniciar sesión</button>
                 </div>
+                ${r.avoid ? `
+                <div class="bg-red-950/40 border border-red-500/40 rounded-2xl p-5 mb-8">
+                    <h3 class="font-bold text-red-300 mb-3 flex items-center gap-2"><span>⛔</span> Prohibidos o a evitar</h3>
+                    <ul class="space-y-3">
+                        ${r.avoid.map(a => `
+                        <li class="flex gap-3">
+                            <span class="text-red-400 font-bold">×</span>
+                            <div>
+                                <div class="text-sm font-semibold text-slate-100">${esc(a.name)}</div>
+                                <div class="text-sm text-red-200/80">${esc(a.why)}</div>
+                            </div>
+                        </li>`).join('')}
+                    </ul>
+                </div>` : ''}
                 <div class="space-y-8">
                 ${r.blocks.map(b => `
                     <section>
@@ -445,13 +597,13 @@
                         </div>
                     </section>`).join('')}
                 </div>
-                ${r.footer ? `
+                ${GYM_FOOTER ? `
                 <div class="mt-8 bg-sky-950/40 border border-sky-500/30 rounded-2xl p-5">
                     <div class="flex items-center gap-2 mb-2">
                         <span class="text-xl">💧</span>
-                        <h3 class="font-bold text-sky-300">${esc(r.footer.title)}</h3>
+                        <h3 class="font-bold text-sky-300">${esc(GYM_FOOTER.title)}</h3>
                     </div>
-                    <p class="text-sm text-slate-300 leading-relaxed">${esc(r.footer.text)}</p>
+                    <p class="text-sm text-slate-300 leading-relaxed">${esc(GYM_FOOTER.text)}</p>
                 </div>` : ''}`;
         }
 
@@ -521,7 +673,7 @@
         document.querySelectorAll('.main-tab').forEach(t => t.addEventListener('click', () => { showView(t.dataset.view); window.scrollTo({ top: 0 }); }));
 
         renderGym();
-        showView(location.hash === '#gym' ? 'gym' : (localStorage.getItem('main-view') || 'protocolo'));
+        showView(location.hash.startsWith('#gym') ? 'gym' : (localStorage.getItem('main-view') || 'protocolo'));
     </script>
     <script>
         const exModal = document.getElementById('exercise-modal');

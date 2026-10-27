@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lumbar-l5s1-pwa-v3';
+const CACHE_NAME = 'lumbar-l5s1-pwa-v7';
 const ASSETS = [
   './',
   './index.html',
@@ -14,12 +14,33 @@ const ASSETS = [
   './img/gym/extension-cuadriceps.jpg',
   './img/gym/curl-femoral.jpg',
   './img/gym/abductor.jpg',
-  './img/gym/extension-lumbar-45.jpg'
+  './img/gym/aductor.jpg',
+  './img/gym/extension-lumbar-45.jpg',
+  './img/gym/dominadas.jpg',
+  './img/gym/jalon-pecho.jpg',
+  './img/gym/remo-pecho-apoyado.jpg',
+  './img/gym/pullover-polea.jpg',
+  './img/gym/curl-inclinado.jpg',
+  './img/gym/curl-scott.jpg',
+  './img/gym/curl-martillo.jpg',
+  './img/gym/press-mancuernas.jpg',
+  './img/gym/flexiones.jpg',
+  './img/gym/pec-deck.jpg',
+  './img/gym/fondos-paralelas.jpg',
+  './img/gym/press-hombros.jpg',
+  './img/gym/elevaciones-laterales.jpg',
+  './img/gym/pajaros-deltoides.jpg',
+  './img/gym/extension-triceps-polea.jpg',
+  './img/gym/press-frances.jpg',
+  './img/gym/patada-triceps.jpg'
 ];
 
 self.addEventListener('install', (event) => {
+  // Se guarda cada archivo por separado: si falta alguno, el resto se guarda igualmente
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
+    caches.open(CACHE_NAME).then((cache) =>
+      Promise.allSettled(ASSETS.map((url) => cache.add(url)))
+    )
   );
   self.skipWaiting();
 });
