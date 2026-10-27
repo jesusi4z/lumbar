@@ -16,6 +16,8 @@
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
         .card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .no-scrollbar { scrollbar-width: none; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
         @keyframes pulse-green {
             0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); border-color: rgba(16, 185, 129, 1); }
             70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); border-color: rgba(16, 185, 129, 0.5); }
@@ -39,7 +41,21 @@
         </div>
     </header>
 
-    <main class="max-w-5xl mx-auto px-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- Navegación principal -->
+    <nav class="sticky top-0 z-40 bg-slate-900/90 backdrop-blur border-b border-slate-800 mb-6 -mt-4">
+        <div class="max-w-5xl mx-auto px-4 py-3 flex gap-2">
+            <button class="main-tab flex-1 py-2.5 rounded-full text-sm font-semibold transition" data-view="protocolo">Protocolo</button>
+            <button class="main-tab flex-1 py-2.5 rounded-full text-sm font-semibold transition" data-view="gym">Gimnasio</button>
+        </div>
+    </nav>
+
+    <!-- Vista: Gimnasio -->
+    <section id="view-gym" class="max-w-5xl mx-auto px-4 hidden">
+        <div class="flex gap-2 overflow-x-auto pb-2 mb-5 -mx-1 px-1 no-scrollbar" id="gym-subtabs"></div>
+        <div id="gym-content"></div>
+    </section>
+
+    <main id="view-protocolo" class="max-w-5xl mx-auto px-4 grid grid-cols-1 md:grid-cols-2 gap-6">
 
         <!-- 1. Mi Problema Raíz -->
         <section class="card bg-slate-800 rounded-2xl p-6 shadow-lg border border-slate-700">
@@ -259,6 +275,249 @@
     </div>
 
     <script>
+        /* ================== GIMNASIO ================== */
+        const GYM = {
+            inferior: {
+                label: 'Tren Inferior',
+                blocks: [
+                    {
+                        tag: 'Calentamiento', title: 'Corsé Activo', time: '10 min', color: 'indigo',
+                        desc: 'Pre-activa los multífidos para proteger la espalda durante la sesión.',
+                        exercises: [
+                            { id: 'inf-birddog', name: 'Bird-Dog isométrico', sets: 2, dose: '2 series · aguantando 8 seg arriba', timer: 8,
+                              imgs: [{ src: 'img/gym/bird-dog.jpg' }],
+                              rule: 'Elevar brazo y pierna horizontalmente sin arquear la zona lumbar. Mantén la pelvis neutra y empuja el talón hacia atrás. Aguanta 8 segundos arriba.' },
+                            { id: 'inf-plancha', name: 'Plancha lateral', sets: 2, dose: '2 series · 30 seg por lado', timer: 30,
+                              imgs: [{ src: 'img/gym/plancha-lateral.jpg' }],
+                              rule: 'Cuerpo en línea recta apoyado en el antebrazo (codo bajo el hombro). Aprieta el glúteo fuertemente para que la pelvis no rote ni caiga. 30 segundos por lado.' }
+                        ]
+                    },
+                    {
+                        tag: 'Bloque 1', title: 'Fuerza de Cadera (Glúteos / Isquios)', color: 'emerald',
+                        exercises: [
+                            { id: 'inf-hipthrust', name: 'Hip Thrust (máquina o barra)', sets: 4, dose: '4 series × 10-12 repeticiones',
+                              imgs: [{ src: 'img/gym/hip-thrust.jpg' }],
+                              rule: 'Mirada al frente, barbilla al pecho y costillas bloqueadas hacia abajo; exprime los glúteos arriba sin arquear jamás la zona lumbar.' }
+                        ]
+                    },
+                    {
+                        tag: 'Bloque 2', title: 'Cuádriceps Unilateral Libre', color: 'emerald',
+                        exercises: [
+                            { id: 'inf-bulgara', name: 'Sentadilla Búlgara o Zancada estática', sets: 3, dose: '3 series × 10-12 rep por pierna',
+                              imgs: [{ src: 'img/gym/sentadilla-bulgara.jpg', label: 'Búlgara' }, { src: 'img/gym/zancada-estatica.jpg', label: 'Zancada' }],
+                              note: 'Si falla el equilibrio, usar máquina Multipower / Smith.',
+                              rule: 'Tronco firme y ligeramente inclinado hacia adelante. Si falla el equilibrio, usar máquina Multipower/Smith.' }
+                        ]
+                    },
+                    {
+                        tag: 'Bloque 3', title: 'Aislamiento Analítico', color: 'emerald',
+                        exercises: [
+                            { id: 'inf-extcuad', name: 'Extensión de cuádriceps en máquina', sets: 3, dose: '3 series × 12-15 rep',
+                              imgs: [{ src: 'img/gym/extension-cuadriceps.jpg' }],
+                              rule: 'Pega bien el sacro al respaldo durante todo el movimiento. Sube y baja controlado, sin impulsos.' },
+                            { id: 'inf-curlfem', name: 'Curl femoral sentado o tumbado', sets: 3, dose: '3 series × 12-15 rep',
+                              imgs: [{ src: 'img/gym/curl-femoral.jpg' }],
+                              rule: 'Pelvis pegada al asiento o al banco en todo momento; no despegues la cadera ni arquees la lumbar para terminar la repetición.' }
+                        ]
+                    },
+                    {
+                        tag: 'Bloque 4', title: 'Reconstrucción Lumbar Específica', color: 'amber',
+                        exercises: [
+                            { id: 'inf-extlumbar', name: 'Extensión lumbar isométrica 45º', sets: 3, dose: '3 series × 30-45 seg', timer: 45,
+                              imgs: [{ src: 'img/gym/extension-lumbar-45.jpg' }],
+                              rule: 'Aguanta totalmente estático, como una tabla paralela al suelo; prohibido hacer repeticiones subiendo y bajando.' }
+                        ]
+                    }
+                ],
+                footer: {
+                    title: 'Opciones Terapéuticas en Guías Clínicas',
+                    text: 'Durante la franja principal del entrenamiento de las 13:30 a 15:00, y encontrándote bajo los efectos sistémicos del ciclo terapéutico de inhibidor selectivo COX-2, el flujo sanguíneo exige un volumen plasmático óptimo. Mantén una hidratación abundante (mínimo 1-1,5 litros de agua durante la sesión) para favorecer el filtrado renal y la correcta depuración de metabolitos derivados del esfuerzo muscular.'
+                }
+            },
+            superior: { label: 'Tren Superior', soon: true },
+            core: { label: 'Core', soon: true },
+            cardio: { label: 'Cardio', soon: true }
+        };
+
+        const COLORS = {
+            indigo: { tag: 'bg-indigo-900/50 text-indigo-300 border-indigo-500/30', dot: 'bg-indigo-500 border-indigo-400' },
+            emerald: { tag: 'bg-emerald-900/40 text-emerald-300 border-emerald-500/30', dot: 'bg-emerald-500 border-emerald-400' },
+            amber: { tag: 'bg-amber-900/40 text-amber-300 border-amber-500/30', dot: 'bg-amber-500 border-amber-400' }
+        };
+
+        // Registro de series del día (se reinicia solo cada día)
+        const todayKey = 'gym-sets-' + new Date().toISOString().slice(0, 10);
+        let setsDone = JSON.parse(localStorage.getItem(todayKey) || '{}');
+        const saveSets = () => localStorage.setItem(todayKey, JSON.stringify(setsDone));
+
+        const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+        const eyeIcon = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>';
+
+        function renderExercise(ex, color) {
+            const done = setsDone[ex.id] || 0;
+            const imgs = ex.imgs.map((im, i) => `
+                <button class="gym-img relative block w-full overflow-hidden rounded-xl bg-slate-950 border border-slate-700 group" data-ex="${ex.id}" data-i="${i}">
+                    <img src="${im.src}" alt="${esc(ex.name)}" loading="lazy" class="w-full aspect-[4/3] object-cover group-hover:scale-105 transition duration-300">
+                    ${im.label ? `<span class="absolute bottom-2 left-2 text-[11px] font-bold bg-slate-900/85 text-slate-100 px-2 py-0.5 rounded-full">${esc(im.label)}</span>` : ''}
+                    <span class="absolute top-2 right-2 bg-slate-900/80 text-slate-200 rounded-full p-1.5">${eyeIcon}</span>
+                </button>`).join('');
+
+            const dots = Array.from({ length: ex.sets }, (_, i) => `
+                <button class="set-dot w-9 h-9 rounded-full border-2 text-xs font-bold transition ${i < done ? COLORS[color].dot + ' text-white' : 'border-slate-600 text-slate-400'}" data-ex="${ex.id}" data-n="${i + 1}" data-color="${color}">${i + 1}</button>`).join('');
+
+            const timer = ex.timer ? `
+                <div class="flex items-center gap-3">
+                    <div class="text-2xl font-mono font-bold text-indigo-300 time-display">${formatTimeGym(ex.timer)}</div>
+                    <button class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-full text-sm font-medium transition start-btn relative z-20" data-time="${ex.timer}" data-id="${ex.id}">Iniciar</button>
+                </div>` : '';
+
+            return `
+                <div class="timer-container bg-slate-900/50 border border-slate-700 rounded-2xl p-4 transition-colors duration-300">
+                    <div class="grid ${ex.imgs.length > 1 ? 'grid-cols-2' : 'grid-cols-1'} gap-2 mb-3">${imgs}</div>
+                    <h4 class="font-bold text-slate-100 text-base">${esc(ex.name)}</h4>
+                    <p class="text-sm text-slate-400 mt-0.5">${esc(ex.dose)}</p>
+                    <div class="bg-slate-800/80 border border-slate-700 rounded-xl p-3 mt-3">
+                        <div class="text-[11px] font-bold uppercase tracking-wider text-indigo-400 mb-1">Regla de Oro</div>
+                        <p class="text-sm text-slate-200 leading-relaxed">${esc(ex.rule)}</p>
+                    </div>
+                    ${ex.note ? `<p class="text-xs text-amber-300 mt-2">⚠ ${esc(ex.note)}</p>` : ''}
+                    <div class="flex flex-wrap items-center justify-between gap-3 mt-4">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-slate-500 mr-1">Series</span>${dots}
+                        </div>
+                        ${timer}
+                    </div>
+                </div>`;
+        }
+
+        function formatTimeGym(s) {
+            return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+        }
+
+        let currentGymTab = localStorage.getItem('gym-tab') || 'inferior';
+
+        function renderGym() {
+            document.getElementById('gym-subtabs').innerHTML = Object.entries(GYM).map(([key, r]) => `
+                <button class="gym-subtab shrink-0 px-4 py-2 rounded-full text-sm font-semibold border transition
+                    ${key === currentGymTab ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-300'}
+                    ${r.soon ? 'opacity-60' : ''}" data-key="${key}">
+                    ${esc(r.label)}${r.soon ? ' <span class="text-[10px] font-normal">· pronto</span>' : ''}
+                </button>`).join('');
+
+            const r = GYM[currentGymTab];
+            const content = document.getElementById('gym-content');
+            if (r.soon) {
+                content.innerHTML = `<div class="bg-slate-800 border border-slate-700 rounded-2xl p-10 text-center text-slate-400">
+                    <div class="text-lg font-semibold text-slate-200 mb-1">${esc(r.label)}</div>Rutina próximamente.</div>`;
+                return;
+            }
+
+            const total = r.blocks.reduce((a, b) => a + b.exercises.reduce((x, e) => x + e.sets, 0), 0);
+            const done = r.blocks.reduce((a, b) => a + b.exercises.reduce((x, e) => x + Math.min(setsDone[e.id] || 0, e.sets), 0), 0);
+            const pct = Math.round(done / total * 100);
+
+            content.innerHTML = `
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-4 mb-6">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm font-semibold text-slate-200">Progreso de hoy</span>
+                        <span class="text-sm font-mono text-emerald-400" id="gym-progress-text">${done}/${total} series</span>
+                    </div>
+                    <div class="h-2.5 bg-slate-900 rounded-full overflow-hidden"><div id="gym-progress-bar" class="h-full bg-gradient-to-r from-indigo-500 to-emerald-500 transition-all duration-500" style="width:${pct}%"></div></div>
+                    <button id="gym-reset" class="text-xs text-slate-500 hover:text-slate-300 mt-2">Reiniciar sesión</button>
+                </div>
+                <div class="space-y-8">
+                ${r.blocks.map(b => `
+                    <section>
+                        <div class="flex flex-wrap items-center gap-2 mb-1">
+                            <span class="text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border ${COLORS[b.color].tag}">${esc(b.tag)}</span>
+                            ${b.time ? `<span class="text-xs text-slate-400">${esc(b.time)}</span>` : ''}
+                        </div>
+                        <h2 class="text-xl font-bold text-white mb-1">${esc(b.title)}</h2>
+                        ${b.desc ? `<p class="text-sm text-slate-400 mb-3">${esc(b.desc)}</p>` : '<div class="mb-3"></div>'}
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            ${b.exercises.map(ex => renderExercise(ex, b.color)).join('')}
+                        </div>
+                    </section>`).join('')}
+                </div>
+                ${r.footer ? `
+                <div class="mt-8 bg-sky-950/40 border border-sky-500/30 rounded-2xl p-5">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-xl">💧</span>
+                        <h3 class="font-bold text-sky-300">${esc(r.footer.title)}</h3>
+                    </div>
+                    <p class="text-sm text-slate-300 leading-relaxed">${esc(r.footer.text)}</p>
+                </div>` : ''}`;
+        }
+
+        function findExercise(id) {
+            for (const r of Object.values(GYM)) for (const b of (r.blocks || [])) for (const e of b.exercises) if (e.id === id) return e;
+        }
+
+        // Actualiza solo los círculos y la barra (sin re-renderizar, para no cortar temporizadores en marcha)
+        function updateSetsUI(id) {
+            const done = setsDone[id] || 0;
+            document.querySelectorAll(`.set-dot[data-ex="${id}"]`).forEach(d => {
+                const on = +d.dataset.n <= done;
+                const onCls = COLORS[d.dataset.color].dot.split(' ').concat('text-white');
+                const offCls = ['border-slate-600', 'text-slate-400'];
+                d.classList.remove(...(on ? offCls : onCls));
+                d.classList.add(...(on ? onCls : offCls));
+            });
+            const r = GYM[currentGymTab];
+            const total = r.blocks.reduce((a, b) => a + b.exercises.reduce((x, e) => x + e.sets, 0), 0);
+            const sum = r.blocks.reduce((a, b) => a + b.exercises.reduce((x, e) => x + Math.min(setsDone[e.id] || 0, e.sets), 0), 0);
+            document.getElementById('gym-progress-text').textContent = `${sum}/${total} series`;
+            document.getElementById('gym-progress-bar').style.width = Math.round(sum / total * 100) + '%';
+        }
+
+        document.getElementById('view-gym').addEventListener('click', (e) => {
+            const sub = e.target.closest('.gym-subtab');
+            if (sub) { currentGymTab = sub.dataset.key; localStorage.setItem('gym-tab', currentGymTab); renderGym(); return; }
+
+            const img = e.target.closest('.gym-img');
+            if (img) {
+                const ex = findExercise(img.dataset.ex);
+                const im = ex.imgs[+img.dataset.i];
+                document.getElementById('ex-modal-title').textContent = ex.name + (im.label ? ' · ' + im.label : '');
+                document.getElementById('ex-modal-rule').textContent = ex.rule;
+                document.getElementById('ex-modal-img').src = im.src;
+                const m = document.getElementById('exercise-modal');
+                m.classList.remove('opacity-0', 'pointer-events-none');
+                m.querySelector('div').classList.replace('scale-95', 'scale-100');
+                return;
+            }
+
+            const dot = e.target.closest('.set-dot');
+            if (dot) {
+                const id = dot.dataset.ex, n = +dot.dataset.n;
+                setsDone[id] = (setsDone[id] || 0) >= n ? n - 1 : n;
+                saveSets();
+                updateSetsUI(id);
+                return;
+            }
+
+            if (e.target.id === 'gym-reset' && confirm('¿Reiniciar las series de hoy?')) {
+                setsDone = {}; saveSets(); renderGym();
+            }
+        });
+
+        // Pestañas principales
+        function showView(view) {
+            document.getElementById('view-protocolo').classList.toggle('hidden', view !== 'protocolo');
+            document.getElementById('view-gym').classList.toggle('hidden', view !== 'gym');
+            document.querySelectorAll('.main-tab').forEach(t => {
+                const active = t.dataset.view === view;
+                t.className = 'main-tab flex-1 py-2.5 rounded-full text-sm font-semibold transition ' +
+                    (active ? 'bg-indigo-600 text-white shadow-lg' : 'bg-slate-800 text-slate-300 hover:bg-slate-700');
+            });
+            localStorage.setItem('main-view', view);
+        }
+        document.querySelectorAll('.main-tab').forEach(t => t.addEventListener('click', () => { showView(t.dataset.view); window.scrollTo({ top: 0 }); }));
+
+        renderGym();
+        showView(location.hash === '#gym' ? 'gym' : (localStorage.getItem('main-view') || 'protocolo'));
+    </script>
+    <script>
         const exModal = document.getElementById('exercise-modal');
         const exModalInner = exModal.querySelector('div');
         
@@ -327,8 +586,11 @@
 
         const activeTimers = {};
 
-        document.querySelectorAll('.start-btn').forEach(btn => {
-            btn.addEventListener('click', function(e) {
+        // Delegación de eventos: funciona también con los temporizadores del Gimnasio (generados dinámicamente)
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('.start-btn');
+            if (!btn) return;
+            (function(e) {
                 e.stopPropagation();
                 const button = this;
                 const container = button.closest('.timer-container');
@@ -371,7 +633,7 @@
                         }
                     }, 1000)
                 };
-            });
+            }).call(btn, e);
         });
     </script>
     <script>
