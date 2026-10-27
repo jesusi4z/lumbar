@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lumbar-l5s1-pwa-v2';
+const CACHE_NAME = 'lumbar-l5s1-pwa-v3';
 const ASSETS = [
   './',
   './index.html',
@@ -13,6 +13,7 @@ const ASSETS = [
   './img/gym/zancada-estatica.jpg',
   './img/gym/extension-cuadriceps.jpg',
   './img/gym/curl-femoral.jpg',
+  './img/gym/abductor.jpg',
   './img/gym/extension-lumbar-45.jpg'
 ];
 

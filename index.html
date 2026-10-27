@@ -317,7 +317,13 @@
                               rule: 'Pega bien el sacro al respaldo durante todo el movimiento. Sube y baja controlado, sin impulsos.' },
                             { id: 'inf-curlfem', name: 'Curl femoral sentado o tumbado', sets: 3, dose: '3 series × 12-15 rep',
                               imgs: [{ src: 'img/gym/curl-femoral.jpg' }],
-                              rule: 'Pelvis pegada al asiento o al banco en todo momento; no despegues la cadera ni arquees la lumbar para terminar la repetición.' }
+                              rule: 'Pelvis pegada al asiento o al banco en todo momento; no despegues la cadera ni arquees la lumbar para terminar la repetición.' },
+                            { id: 'inf-abductor', name: 'Abductor en máquina', sets: 3, dose: '3 series × 12-15 rep',
+                              imgs: [{ src: 'img/gym/abductor.jpg' }],
+                              rule: 'Siéntate erguido, apoyando bien los isquiones (los huesos del culo) y sacando un poco de pecho. Evita escurrir la pelvis hacia adelante hundiendo la lumbar contra el respaldo en forma de "C", ya que eso abriría tu fisura HIZ.' },
+                            { id: 'inf-aductor', name: 'Aductor en máquina', sets: 3, dose: '3 series × 12-15 rep',
+                              imgs: [], // TODO: añadir img/gym/aductor.jpg
+                              rule: 'Siéntate erguido, apoyando bien los isquiones (los huesos del culo) y sacando un poco de pecho. Evita escurrir la pelvis hacia adelante hundiendo la lumbar contra el respaldo en forma de "C", ya que eso abriría tu fisura HIZ.' }
                         ]
                     },
                     {
@@ -373,7 +379,7 @@
 
             return `
                 <div class="timer-container bg-slate-900/50 border border-slate-700 rounded-2xl p-4 transition-colors duration-300">
-                    <div class="grid ${ex.imgs.length > 1 ? 'grid-cols-2' : 'grid-cols-1'} gap-2 mb-3">${imgs}</div>
+                    ${ex.imgs.length ? `<div class="grid ${ex.imgs.length > 1 ? 'grid-cols-2' : 'grid-cols-1'} gap-2 mb-3">${imgs}</div>` : ''}
                     <h4 class="font-bold text-slate-100 text-base">${esc(ex.name)}</h4>
                     <p class="text-sm text-slate-400 mt-0.5">${esc(ex.dose)}</p>
                     <div class="bg-slate-800/80 border border-slate-700 rounded-xl p-3 mt-3">
