@@ -28,6 +28,29 @@
             background-color: rgba(6, 78, 59, 0.4) !important;
             border-color: rgba(16, 185, 129, 0.6) !important;
         }
+        @keyframes glow-pulse {
+            0%, 100% { 
+                box-shadow: 0 0 25px rgba(16, 185, 129, 0.45), inset 0 0 15px rgba(16, 185, 129, 0.2);
+                border-color: rgba(16, 185, 129, 0.9);
+            }
+            50% { 
+                box-shadow: 0 0 45px rgba(16, 185, 129, 0.8), inset 0 0 25px rgba(16, 185, 129, 0.35);
+                border-color: rgba(52, 211, 153, 1);
+            }
+        }
+        .pre-card-active {
+            border-color: #10b981 !important;
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(6, 78, 59, 0.55)) !important;
+            animation: glow-pulse 1.8s infinite ease-in-out;
+            transform: translateY(-2px) scale(1.02);
+            opacity: 1 !important;
+            z-index: 10;
+        }
+        .pre-card-dimmed {
+            opacity: 0.38 !important;
+            filter: grayscale(20%);
+            transform: scale(0.99);
+        }
     </style>
 </head>
 <body class="bg-slate-900 text-slate-300 min-h-screen pb-12">
@@ -43,9 +66,14 @@
 
     <!-- Navegación principal -->
     <nav class="sticky top-0 z-40 bg-slate-900/90 backdrop-blur border-b border-slate-800 mb-6 -mt-4">
-        <div class="max-w-5xl mx-auto px-4 py-3 flex gap-2">
+        <div class="max-w-5xl mx-auto px-4 py-3 flex gap-2 items-center">
             <button class="main-tab flex-1 py-2.5 rounded-full text-sm font-semibold transition" data-view="protocolo">Protocolo</button>
             <button class="main-tab flex-1 py-2.5 rounded-full text-sm font-semibold transition" data-view="gym">Gimnasio</button>
+            <button onclick="toggleScreenWakeLock()" id="nav-wakelock-btn" class="flex items-center gap-2 px-3 py-2 rounded-full text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition" title="Evitar que la pantalla se apague">
+                <span class="wakelock-dot w-2 h-2 rounded-full bg-slate-500"></span>
+                <span class="wakelock-text hidden sm:inline">Pantalla activa</span>
+                <span class="sm:hidden text-xs">☀️</span>
+            </button>
         </div>
     </nav>
 
@@ -97,71 +125,155 @@
 
         <!-- 3. Rutina Pre-Sueño -->
         <section class="card bg-slate-800 rounded-2xl p-6 shadow-lg border border-slate-700 md:col-span-2">
-            <div class="mb-6 border-b border-slate-700 pb-3">
-                <h2 class="text-xl font-bold text-white">03. Rutina Pre-Sueño (Pulsa para ver imagen)</h2>
-                <p class="text-xs text-slate-400 font-medium mt-1">Realizar 20 min antes de ir al colchón. Deja los multífidos "encendidos".</p>
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5 border-b border-slate-700 pb-4">
+                <div>
+                    <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                        <span>03. Rutina Pre-Sueño Guiada</span>
+                        <span id="routine-status-pill" class="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-slate-700 text-slate-300">En espera</span>
+                    </h2>
+                    <p class="text-xs text-slate-400 font-medium mt-1">Realizar 20 min antes de ir al colchón. Activación secuencial con pitidos y pantalla activa.</p>
+                </div>
+                <!-- Controles secundarios: modo series y sonido -->
+                <div class="flex items-center gap-2 self-start sm:self-auto">
+                    <button id="sound-toggle-btn" onclick="toggleSound()" class="flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg bg-slate-900/80 hover:bg-slate-700 text-slate-300 border border-slate-700 transition" title="Activar o silenciar avisos acústicos">
+                        <span id="sound-icon">🔊</span>
+                        <span class="hidden sm:inline">Pitidos On</span>
+                    </button>
+                    <!-- Selector de series -->
+                    <div class="inline-flex rounded-lg bg-slate-900/80 p-0.5 border border-slate-700 text-xs">
+                        <button id="mode-btn-2" onclick="setRoutineMode(2)" class="px-2.5 py-1 rounded-md font-semibold transition bg-indigo-600 text-white">2 Series</button>
+                        <button id="mode-btn-1" onclick="setRoutineMode(1)" class="px-2.5 py-1 rounded-md font-medium text-slate-400 hover:text-white transition">1 Serie</button>
+                    </div>
+                </div>
             </div>
+
+            <!-- Panel de Control Principal de la Rutina -->
+            <div id="routine-panel" class="bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950/40 border border-slate-700/80 rounded-2xl p-5 mb-6 shadow-2xl relative overflow-hidden">
+                <div class="flex flex-col lg:flex-row items-center justify-between gap-6">
+                    <!-- Información del paso actual -->
+                    <div class="flex-1 text-center lg:text-left w-full">
+                        <div class="flex items-center justify-center lg:justify-start gap-2 text-xs font-bold uppercase tracking-wider text-indigo-400 mb-1">
+                            <span id="routine-cur-exercise">Bird-Dog Isométrico</span>
+                            <span class="text-slate-600">·</span>
+                            <span id="routine-cur-set" class="text-emerald-400">Serie 1 de 2</span>
+                        </div>
+                        <div id="routine-cur-phase" class="text-xl sm:text-2xl font-black text-white">
+                            Pulsa «Iniciar» para comenzar
+                        </div>
+                        <div id="routine-cur-cue" class="text-xs text-slate-400 mt-1 max-w-lg mx-auto lg:mx-0">
+                            Te avisará con pitidos a los 8s, 2s para colocarte y continuará con la plancha y el puente sin tocar el móvil.
+                        </div>
+                    </div>
+
+                    <!-- Temporizador gigante y botones principales -->
+                    <div class="flex items-center gap-5 sm:gap-7">
+                        <div class="text-center min-w-[120px]">
+                            <div id="routine-main-display" class="text-5xl sm:text-6xl font-mono font-black text-indigo-300 tracking-tight drop-shadow-[0_0_20px_rgba(99,102,241,0.35)]">
+                                00:08
+                            </div>
+                            <div id="routine-cur-action" class="text-[11px] uppercase tracking-wider font-semibold text-slate-400 mt-1">
+                                Listo para empezar
+                            </div>
+                        </div>
+
+                        <!-- Botón Iniciar / Detener -->
+                        <div class="flex flex-col gap-2 min-w-[150px]">
+                            <button id="routine-action-btn" onclick="toggleRoutineAction()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-5 py-3.5 rounded-xl shadow-lg shadow-emerald-500/25 transition-all transform active:scale-95 flex items-center justify-center gap-2 text-sm sm:text-base">
+                                <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                <span>Iniciar Rutina</span>
+                            </button>
+                            <div id="routine-sub-controls" class="hidden flex gap-2">
+                                <button id="routine-pause-btn" onclick="pauseRoutine()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-medium py-1.5 px-3 rounded-lg text-xs transition flex items-center justify-center gap-1">
+                                    <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                                    <span>Pausar</span>
+                                </button>
+                                <button id="routine-stop-btn" onclick="stopRoutine()" class="flex-1 bg-rose-600/80 hover:bg-rose-600 text-white font-medium py-1.5 px-3 rounded-lg text-xs transition flex items-center justify-center gap-1">
+                                    <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></svg>
+                                    <span>Detener</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Barra de Progreso General -->
+                <div class="mt-4 pt-3 border-t border-slate-800/80">
+                    <div class="flex justify-between items-center text-xs text-slate-400 mb-1.5">
+                        <span id="routine-progress-counter" class="font-medium text-slate-300">Paso 0 de 16</span>
+                        <span id="routine-next-step" class="text-slate-400 truncate max-w-[200px] sm:max-w-none">Próximo: Bird-Dog Lado Derecho (8s)</span>
+                    </div>
+                    <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden border border-slate-700/60">
+                        <div id="routine-progress-bar" class="bg-gradient-to-r from-indigo-500 to-emerald-400 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Las 3 Tarjetas de Ejercicios (se iluminan automáticamente según la fase) -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
-                <div class="timer-container border border-slate-700 rounded-xl p-4 bg-slate-900/50 hover:bg-slate-700 hover:border-indigo-500/50 flex flex-col justify-between transition-colors duration-300 cursor-pointer exercise-card group"
+                <!-- 1. Bird-Dog Isométrico -->
+                <div id="pre-card-bird-dog" class="border border-slate-700 rounded-xl p-4 bg-slate-900/50 hover:border-indigo-500/50 flex flex-col justify-between transition-all duration-300 cursor-pointer exercise-card group"
                      data-title="Bird-Dog Isométrico" 
                      data-rule="Elevar brazo y pierna horizontalmente sin arquear la zona lumbar. Mantén la pelvis neutra y empuja el talón hacia atrás." 
                      data-img="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20800%20500%22%20width%3D%22800%22%20height%3D%22500%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22bg5%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%230f172a%22%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%231e1b4b%22%2F%3E%0A%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%20%20%3Cpattern%20id%3D%22grid5%22%20width%3D%2240%22%20height%3D%2240%22%20patternUnits%3D%22userSpaceOnUse%22%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M%2040%200%20L%200%200%200%2040%22%20fill%3D%22none%22%20stroke%3D%22%23334155%22%20stroke-width%3D%220.7%22%20stroke-opacity%3D%220.4%22%2F%3E%0A%20%20%20%20%3C%2Fpattern%3E%0A%20%20%3C%2Fdefs%3E%0A%20%20%3Crect%20width%3D%22800%22%20height%3D%22500%22%20fill%3D%22url(%23bg5)%22%2F%3E%0A%20%20%3Crect%20width%3D%22800%22%20height%3D%22500%22%20fill%3D%22url(%23grid5)%22%2F%3E%0A%20%20%3Crect%20x%3D%2290%22%20y%3D%22405%22%20width%3D%22620%22%20height%3D%2216%22%20rx%3D%228%22%20fill%3D%22%234f46e5%22%20stroke%3D%22%23818cf8%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%3Crect%20x%3D%2228%22%20y%3D%2224%22%20width%3D%22420%22%20height%3D%2236%22%20rx%3D%228%22%20fill%3D%22%230f172a%22%20fill-opacity%3D%220.8%22%20stroke%3D%22%23334155%22%2F%3E%0A%20%20%3Ctext%20x%3D%2244%22%20y%3D%2247%22%20fill%3D%22%23818cf8%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20font-weight%3D%22bold%22%3EBIRD-DOG%20ISOM%C3%89TRICO%20%C2%B7%20REACTIVACI%C3%93N%20DE%20MULT%C3%8DFIDOS%3C%2Ftext%3E%0A%20%20%3Cline%20x1%3D%22105%22%20y1%3D%22245%22%20x2%3D%22705%22%20y2%3D%22245%22%20stroke%3D%22%2310b981%22%20stroke-width%3D%223%22%20stroke-dasharray%3D%2210%2C8%22%2F%3E%0A%20%20%3Cline%20x1%3D%22335%22%20y1%3D%22255%22%20x2%3D%22335%22%20y2%3D%22395%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%2222%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3Cline%20x1%3D%22335%22%20y1%3D%22395%22%20x2%3D%22255%22%20y2%3D%22400%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%2218%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3Cline%20x1%3D%22495%22%20y1%3D%22255%22%20x2%3D%22495%22%20y2%3D%22400%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%2218%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3Cline%20x1%3D%22335%22%20y1%3D%22250%22%20x2%3D%22155%22%20y2%3D%22250%22%20stroke%3D%22%23e2e8f0%22%20stroke-width%3D%2222%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3Cline%20x1%3D%22155%22%20y1%3D%22242%22%20x2%3D%22155%22%20y2%3D%22282%22%20stroke%3D%22%2338bdf8%22%20stroke-width%3D%2212%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M%20135%20250%20L%2095%20250%22%20stroke%3D%22%2338bdf8%22%20stroke-width%3D%223.5%22%2F%3E%0A%20%20%3Cpolygon%20points%3D%2295%2C244%2080%2C250%2095%2C256%22%20fill%3D%22%2338bdf8%22%2F%3E%0A%20%20%3Ctext%20x%3D%2275%22%20y%3D%22220%22%20fill%3D%22%2338bdf8%22%20font-family%3D%22sans-serif%22%20font-size%3D%2213%22%20font-weight%3D%22bold%22%3EEmpujar%20tal%C3%B3n%20atr%C3%A1s%3C%2Ftext%3E%0A%20%20%3Cline%20x1%3D%22335%22%20y1%3D%22250%22%20x2%3D%22500%22%20y2%3D%22250%22%20stroke%3D%22%23e2e8f0%22%20stroke-width%3D%2234%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3Cline%20x1%3D%22345%22%20y1%3D%22236%22%20x2%3D%22455%22%20y2%3D%22236%22%20stroke%3D%22%2310b981%22%20stroke-width%3D%2212%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%22380%22%20cy%3D%22236%22%20r%3D%2218%22%20fill%3D%22none%22%20stroke%3D%22%23f59e0b%22%20stroke-width%3D%222.5%22%20stroke-dasharray%3D%224%2C4%22%2F%3E%0A%20%20%3Cline%20x1%3D%22500%22%20y1%3D%22248%22%20x2%3D%22655%22%20y2%3D%22248%22%20stroke%3D%22%23e2e8f0%22%20stroke-width%3D%2216%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M%20665%20248%20L%20705%20248%22%20stroke%3D%22%2310b981%22%20stroke-width%3D%223.5%22%2F%3E%0A%20%20%3Cpolygon%20points%3D%22705%2C242%20720%2C248%20705%2C254%22%20fill%3D%22%2310b981%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%22535%22%20cy%3D%22242%22%20r%3D%2220%22%20fill%3D%22%23cbd5e1%22%20stroke%3D%22%23475569%22%20stroke-width%3D%223%22%2F%3E%0A%20%20%3Crect%20x%3D%22255%22%20y%3D%22105%22%20width%3D%22320%22%20height%3D%2258%22%20rx%3D%228%22%20fill%3D%22%23064e3b%22%20stroke%3D%22%2310b981%22%20stroke-width%3D%221.5%22%2F%3E%0A%20%20%3Ctext%20x%3D%22272%22%20y%3D%22128%22%20fill%3D%22%236ee7b7%22%20font-family%3D%22sans-serif%22%20font-size%3D%2213%22%20font-weight%3D%22bold%22%3ELUMBAR%20PLANA%20(CERO%20HIPEREXTENSI%C3%93N)%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%22272%22%20y%3D%22148%22%20fill%3D%22%23a7f3d0%22%20font-family%3D%22sans-serif%22%20font-size%3D%2212%22%3EIsometr%C3%ADa%208%20seg%20%C2%B7%20Pelvis%20paralela%20al%20suelo%3C%2Ftext%3E%0A%20%20%3Crect%20x%3D%2228%22%20y%3D%22446%22%20width%3D%22744%22%20height%3D%2238%22%20rx%3D%228%22%20fill%3D%22%230f172a%22%20fill-opacity%3D%220.9%22%20stroke%3D%22%23334155%22%2F%3E%0A%20%20%3Ctext%20x%3D%2248%22%20y%3D%22470%22%20fill%3D%22%23e2e8f0%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20font-weight%3D%22600%22%3E8%20seg%20por%20repetici%C3%B3n%20%C2%B7%202%20series%20%C3%97%206%20reps%2Flado%20%C2%B7%20No%20subir%20la%20pierna%20por%20encima%20de%20la%20cadera%3C%2Ftext%3E%0A%3C%2Fsvg%3E">
-                    <div class="mb-4 relative">
-                        <h4 class="font-bold text-slate-200 pr-6">Bird-Dog Isométrico</h4>
-                        <div class="absolute top-0 right-0 text-slate-500 group-hover:text-indigo-400 transition">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                    <div class="mb-3 relative">
+                        <div class="flex items-center justify-between pr-6">
+                            <h4 class="font-bold text-slate-200">Bird-Dog Isométrico</h4>
+                            <div class="text-slate-500 group-hover:text-indigo-400 transition">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                            </div>
                         </div>
-                        <p class="text-xs text-slate-400 mt-1">8 seg. | 2 series de 6 reps/lado</p>
-                        <p class="text-xs text-indigo-400 font-medium mt-1">Elevar horizontalmente sin arquear.</p>
+                        <p class="text-xs text-slate-400 mt-1">8 seg. por lado · 2 series</p>
+                        <p class="text-xs text-indigo-400 font-medium mt-0.5">Reactivación de multífidos profundos.</p>
                     </div>
-                    <div class="flex items-center justify-between">
-                        <div class="text-3xl font-mono font-bold text-indigo-300 time-display">00:08</div>
-                        <button class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-full text-sm font-medium transition start-btn relative z-20" data-time="8" data-id="timer1">
-                            Iniciar
-                        </button>
+                    <div class="flex items-center justify-between pt-3 border-t border-slate-800">
+                        <div id="pre-time-bird-dog" class="text-2xl font-mono font-bold text-indigo-300">00:08</div>
+                        <div id="pre-badge-bird-dog" class="text-xs px-2.5 py-1 rounded-full font-semibold bg-slate-800 text-slate-400 border border-slate-700">8s / lado</div>
                     </div>
                 </div>
 
-                <div class="timer-container border border-slate-700 rounded-xl p-4 bg-slate-900/50 hover:bg-slate-700 hover:border-indigo-500/50 flex flex-col justify-between transition-colors duration-300 cursor-pointer exercise-card group"
+                <!-- 2. Plancha Lateral -->
+                <div id="pre-card-plancha-lateral" class="border border-slate-700 rounded-xl p-4 bg-slate-900/50 hover:border-indigo-500/50 flex flex-col justify-between transition-all duration-300 cursor-pointer exercise-card group"
                      data-title="Plancha Lateral" 
                      data-rule="Cuerpo en línea recta apoyado en el antebrazo. Aprieta el glúteo fuertemente para que la pelvis no rote." 
                      data-img="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20800%20500%22%20width%3D%22800%22%20height%3D%22500%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22bg6%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%230f172a%22%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%231e1b4b%22%2F%3E%0A%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%20%20%3Cpattern%20id%3D%22grid6%22%20width%3D%2240%22%20height%3D%2240%22%20patternUnits%3D%22userSpaceOnUse%22%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M%2040%200%20L%200%200%200%2040%22%20fill%3D%22none%22%20stroke%3D%22%23334155%22%20stroke-width%3D%220.7%22%20stroke-opacity%3D%220.4%22%2F%3E%0A%20%20%20%20%3C%2Fpattern%3E%0A%20%20%3C%2Fdefs%3E%0A%20%20%3Crect%20width%3D%22800%22%20height%3D%22500%22%20fill%3D%22url(%23bg6)%22%2F%3E%0A%20%20%3Crect%20width%3D%22800%22%20height%3D%22500%22%20fill%3D%22url(%23grid6)%22%2F%3E%0A%20%20%3Crect%20x%3D%2290%22%20y%3D%22405%22%20width%3D%22620%22%20height%3D%2216%22%20rx%3D%228%22%20fill%3D%22%234f46e5%22%20stroke%3D%22%23818cf8%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%3Crect%20x%3D%2228%22%20y%3D%2224%22%20width%3D%22410%22%20height%3D%2236%22%20rx%3D%228%22%20fill%3D%22%230f172a%22%20fill-opacity%3D%220.8%22%20stroke%3D%22%23334155%22%2F%3E%0A%20%20%3Ctext%20x%3D%2244%22%20y%3D%2247%22%20fill%3D%22%23818cf8%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20font-weight%3D%22bold%22%3EPLANCHA%20LATERAL%20%C2%B7%20CUADRADO%20LUMBAR%20Y%20GL%C3%9ATEO%20MEDIO%3C%2Ftext%3E%0A%20%20%3Cline%20x1%3D%22160%22%20y1%3D%22395%22%20x2%3D%22620%22%20y2%3D%22180%22%20stroke%3D%22%2310b981%22%20stroke-width%3D%223%22%20stroke-dasharray%3D%2210%2C8%22%2F%3E%0A%20%20%3Cline%20x1%3D%22535%22%20y1%3D%22220%22%20x2%3D%22535%22%20y2%3D%22395%22%20stroke%3D%22%23e2e8f0%22%20stroke-width%3D%2220%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3Cline%20x1%3D%22535%22%20y1%3D%22395%22%20x2%3D%22595%22%20y2%3D%22395%22%20stroke%3D%22%23cbd5e1%22%20stroke-width%3D%2216%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M%20535%20365%20L%20565%20365%20L%20565%20395%22%20fill%3D%22none%22%20stroke%3D%22%2338bdf8%22%20stroke-width%3D%222.5%22%2F%3E%0A%20%20%3Cline%20x1%3D%22195%22%20y1%3D%22382%22%20x2%3D%22385%22%20y2%3D%22292%22%20stroke%3D%22%23cbd5e1%22%20stroke-width%3D%2228%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3Crect%20x%3D%22172%22%20y%3D%22370%22%20width%3D%2228%22%20height%3D%2234%22%20rx%3D%226%22%20fill%3D%22%233b82f6%22%2F%3E%0A%20%20%3Cline%20x1%3D%22385%22%20y1%3D%22292%22%20x2%3D%22535%22%20y2%3D%22220%22%20stroke%3D%22%23e2e8f0%22%20stroke-width%3D%2236%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3Cline%20x1%3D%22375%22%20y1%3D%22306%22%20x2%3D%22515%22%20y2%3D%22240%22%20stroke%3D%22%2310b981%22%20stroke-width%3D%2212%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M%20410%20365%20L%20410%20318%22%20stroke%3D%22%2310b981%22%20stroke-width%3D%224%22%2F%3E%0A%20%20%3Cpolygon%20points%3D%22403%2C320%20410%2C306%20417%2C320%22%20fill%3D%22%2310b981%22%2F%3E%0A%20%20%3Ctext%20x%3D%22345%22%20y%3D%22385%22%20fill%3D%22%236ee7b7%22%20font-family%3D%22sans-serif%22%20font-size%3D%2213%22%20font-weight%3D%22bold%22%3EElevar%20cadera%20y%20apretar%20gl%C3%BAteo%3C%2Ftext%3E%0A%20%20%3Cpath%20d%3D%22M%20520%20205%20L%20465%20190%20L%20405%20270%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%2214%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%22575%22%20cy%3D%22200%22%20r%3D%2222%22%20fill%3D%22%23e2e8f0%22%20stroke%3D%22%23475569%22%20stroke-width%3D%223%22%2F%3E%0A%20%20%3Crect%20x%3D%22210%22%20y%3D%22100%22%20width%3D%22330%22%20height%3D%2258%22%20rx%3D%228%22%20fill%3D%22%23064e3b%22%20stroke%3D%22%2310b981%22%20stroke-width%3D%221.5%22%2F%3E%0A%20%20%3Ctext%20x%3D%22228%22%20y%3D%22123%22%20fill%3D%22%236ee7b7%22%20font-family%3D%22sans-serif%22%20font-size%3D%2213%22%20font-weight%3D%22bold%22%3EBLOQUEO%20ANTIGRAVITATORIO%20LATERAL%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%22228%22%20y%3D%22143%22%20fill%3D%22%23a7f3d0%22%20font-family%3D%22sans-serif%22%20font-size%3D%2212%22%3E40%20seg%2Flado%20%C2%B7%20Pelvis%20recta%20sin%20rotar%20ni%20caer%3C%2Ftext%3E%0A%20%20%3Crect%20x%3D%2228%22%20y%3D%22446%22%20width%3D%22744%22%20height%3D%2238%22%20rx%3D%228%22%20fill%3D%22%230f172a%22%20fill-opacity%3D%220.9%22%20stroke%3D%22%23334155%22%2F%3E%0A%20%20%3Ctext%20x%3D%2248%22%20y%3D%22470%22%20fill%3D%22%23e2e8f0%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20font-weight%3D%22600%22%3ECodo%20justo%20bajo%20el%20hombro%20%C2%B7%20Gl%C3%BAteos%20contra%C3%ADdos%20al%20100%25%20%C2%B7%20Cuerpo%20en%20bloque%20recto%3C%2Ftext%3E%0A%3C%2Fsvg%3E">
-                    <div class="mb-4 relative">
-                        <h4 class="font-bold text-slate-200 pr-6">Plancha Lateral</h4>
-                        <div class="absolute top-0 right-0 text-slate-500 group-hover:text-indigo-400 transition">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                    <div class="mb-3 relative">
+                        <div class="flex items-center justify-between pr-6">
+                            <h4 class="font-bold text-slate-200">Plancha Lateral</h4>
+                            <div class="text-slate-500 group-hover:text-indigo-400 transition">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                            </div>
                         </div>
-                        <p class="text-xs text-slate-400 mt-1">40 seg. | 2 series por lado</p>
-                        <p class="text-xs text-indigo-400 font-medium mt-1">Apretar glúteos fuertemente.</p>
+                        <p class="text-xs text-slate-400 mt-1">40 seg. por lado · 2 series</p>
+                        <p class="text-xs text-indigo-400 font-medium mt-0.5">Cuadrado lumbar y glúteo medio.</p>
                     </div>
-                    <div class="flex items-center justify-between">
-                        <div class="text-3xl font-mono font-bold text-indigo-300 time-display">00:40</div>
-                        <button class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-full text-sm font-medium transition start-btn relative z-20" data-time="40" data-id="timer2">
-                            Iniciar
-                        </button>
+                    <div class="flex items-center justify-between pt-3 border-t border-slate-800">
+                        <div id="pre-time-plancha-lateral" class="text-2xl font-mono font-bold text-indigo-300">00:40</div>
+                        <div id="pre-badge-plancha-lateral" class="text-xs px-2.5 py-1 rounded-full font-semibold bg-slate-800 text-slate-400 border border-slate-700">40s / lado</div>
                     </div>
                 </div>
 
-                <div class="timer-container border border-slate-700 rounded-xl p-4 bg-slate-900/50 hover:bg-slate-700 hover:border-indigo-500/50 flex flex-col justify-between transition-colors duration-300 cursor-pointer exercise-card group"
+                <!-- 3. Puente de Glúteo Isométrico -->
+                <div id="pre-card-puente-gluteo" class="border border-slate-700 rounded-xl p-4 bg-slate-900/50 hover:border-indigo-500/50 flex flex-col justify-between transition-all duration-300 cursor-pointer exercise-card group"
                      data-title="Puente de Glúteo Isométrico" 
                      data-rule="No arquees la lumbar al subir; toda la fuerza debe salir de apretar los talones contra el suelo y contraer los glúteos." 
                      data-img="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20800%20500%22%20width%3D%22800%22%20height%3D%22500%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22bg7%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%230f172a%22%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%231e1b4b%22%2F%3E%0A%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%20%20%3Cpattern%20id%3D%22grid7%22%20width%3D%2240%22%20height%3D%2240%22%20patternUnits%3D%22userSpaceOnUse%22%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M%2040%200%20L%200%200%200%2040%22%20fill%3D%22none%22%20stroke%3D%22%23334155%22%20stroke-width%3D%220.7%22%20stroke-opacity%3D%220.4%22%2F%3E%0A%20%20%20%20%3C%2Fpattern%3E%0A%20%20%3C%2Fdefs%3E%0A%20%20%3Crect%20width%3D%22800%22%20height%3D%22500%22%20fill%3D%22url(%23bg7)%22%2F%3E%0A%20%20%3Crect%20width%3D%22800%22%20height%3D%22500%22%20fill%3D%22url(%23grid7)%22%2F%3E%0A%20%20%3Crect%20x%3D%2290%22%20y%3D%22405%22%20width%3D%22620%22%20height%3D%2216%22%20rx%3D%228%22%20fill%3D%22%234f46e5%22%20stroke%3D%22%23818cf8%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%3Crect%20x%3D%2228%22%20y%3D%2224%22%20width%3D%22440%22%20height%3D%2236%22%20rx%3D%228%22%20fill%3D%22%230f172a%22%20fill-opacity%3D%220.8%22%20stroke%3D%22%23334155%22%2F%3E%0A%20%20%3Ctext%20x%3D%2244%22%20y%3D%2247%22%20fill%3D%22%23818cf8%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20font-weight%3D%22bold%22%3EPUENTE%20DE%20GL%C3%9ATEO%20ISOM%C3%89TRICO%20%C2%B7%20DESCARGA%20FACETARIA%20L4-S1%3C%2Ftext%3E%0A%20%20%3Cline%20x1%3D%22215%22%20y1%3D%22390%22%20x2%3D%22545%22%20y2%3D%22215%22%20stroke%3D%22%2310b981%22%20stroke-width%3D%223%22%20stroke-dasharray%3D%2210%2C8%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%22175%22%20cy%3D%22382%22%20r%3D%2222%22%20fill%3D%22%23e2e8f0%22%20stroke%3D%22%23475569%22%20stroke-width%3D%223%22%2F%3E%0A%20%20%3Cline%20x1%3D%22225%22%20y1%3D%22388%22%20x2%3D%22395%22%20y2%3D%22396%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%2214%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3Cline%20x1%3D%22225%22%20y1%3D%22385%22%20x2%3D%22395%22%20y2%3D%22295%22%20stroke%3D%22%23e2e8f0%22%20stroke-width%3D%2234%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3Cellipse%20cx%3D%22400%22%20cy%3D%22306%22%20rx%3D%2232%22%20ry%3D%2218%22%20transform%3D%22rotate(-28%20400%20306)%22%20fill%3D%22%2310b981%22%20fill-opacity%3D%220.85%22%20stroke%3D%22%236ee7b7%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%3Cline%20x1%3D%22395%22%20y1%3D%22295%22%20x2%3D%22520%22%20y2%3D%22228%22%20stroke%3D%22%23cbd5e1%22%20stroke-width%3D%2226%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3Cline%20x1%3D%22520%22%20y1%3D%22228%22%20x2%3D%22565%22%20y2%3D%22395%22%20stroke%3D%22%23cbd5e1%22%20stroke-width%3D%2222%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3Crect%20x%3D%22552%22%20y%3D%22388%22%20width%3D%2246%22%20height%3D%2216%22%20rx%3D%225%22%20fill%3D%22%233b82f6%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M%20565%20345%20L%20565%20382%22%20stroke%3D%22%23f59e0b%22%20stroke-width%3D%224%22%2F%3E%0A%20%20%3Cpolygon%20points%3D%22558%2C380%20565%2C394%20572%2C380%22%20fill%3D%22%23f59e0b%22%2F%3E%0A%20%20%3Ctext%20x%3D%22585%22%20y%3D%22370%22%20fill%3D%22%23fcd34d%22%20font-family%3D%22sans-serif%22%20font-size%3D%2213%22%20font-weight%3D%22bold%22%3EEmpujar%20talones%20contra%20el%20suelo%3C%2Ftext%3E%0A%20%20%3Crect%20x%3D%22210%22%20y%3D%22120%22%20width%3D%22340%22%20height%3D%2258%22%20rx%3D%228%22%20fill%3D%22%23064e3b%22%20stroke%3D%22%2310b981%22%20stroke-width%3D%221.5%22%2F%3E%0A%20%20%3Ctext%20x%3D%22228%22%20y%3D%22143%22%20fill%3D%22%236ee7b7%22%20font-family%3D%22sans-serif%22%20font-size%3D%2213%22%20font-weight%3D%22bold%22%3ERETROVERSI%C3%93N%20SUAVE%20%C2%B7%20NO%20ARQUEAR%20LUMBAR%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%22228%22%20y%3D%22163%22%20fill%3D%22%23a7f3d0%22%20font-family%3D%22sans-serif%22%20font-size%3D%2212%22%3EIsometr%C3%ADa%2030%20seg%20%C2%B7%20Fuerza%20100%25%20desde%20gl%C3%BAteos%3C%2Ftext%3E%0A%20%20%3Crect%20x%3D%2228%22%20y%3D%22446%22%20width%3D%22744%22%20height%3D%2238%22%20rx%3D%228%22%20fill%3D%22%230f172a%22%20fill-opacity%3D%220.9%22%20stroke%3D%22%23334155%22%2F%3E%0A%20%20%3Ctext%20x%3D%2248%22%20y%3D%22470%22%20fill%3D%22%23e2e8f0%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20font-weight%3D%22600%22%3E30%20seg%20isom%C3%A9trico%20%C2%B7%202%20series%20%C2%B7%20Costillas%20cerradas%20%C2%B7%20Contracci%C3%B3n%20m%C3%A1xima%20de%20gl%C3%BAteos%20arriba%3C%2Ftext%3E%0A%3C%2Fsvg%3E">
-                    <div class="mb-4 relative">
-                        <h4 class="font-bold text-slate-200 pr-6">Puente de Glúteo Iso.</h4>
-                        <div class="absolute top-0 right-0 text-slate-500 group-hover:text-indigo-400 transition">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                    <div class="mb-3 relative">
+                        <div class="flex items-center justify-between pr-6">
+                            <h4 class="font-bold text-slate-200">Puente de Glúteo Iso.</h4>
+                            <div class="text-slate-500 group-hover:text-indigo-400 transition">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                            </div>
                         </div>
-                        <p class="text-xs text-slate-400 mt-1">30 seg. | 2 series</p>
-                        <p class="text-xs text-indigo-400 font-medium mt-1">No arquear lumbar al subir.</p>
+                        <p class="text-xs text-slate-400 mt-1">30 seg. isométrico · 2 series</p>
+                        <p class="text-xs text-indigo-400 font-medium mt-0.5">Descarga facetaria y glúteo mayor.</p>
                     </div>
-                    <div class="flex items-center justify-between">
-                        <div class="text-3xl font-mono font-bold text-indigo-300 time-display">00:30</div>
-                        <button class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-full text-sm font-medium transition start-btn relative z-20" data-time="30" data-id="timer3">
-                            Iniciar
-                        </button>
+                    <div class="flex items-center justify-between pt-3 border-t border-slate-800">
+                        <div id="pre-time-puente-gluteo" class="text-2xl font-mono font-bold text-indigo-300">00:30</div>
+                        <div id="pre-badge-puente-gluteo" class="text-xs px-2.5 py-1 rounded-full font-semibold bg-slate-800 text-slate-400 border border-slate-700">30s iso</div>
                     </div>
                 </div>
+
             </div>
         </section>
     </main>
@@ -626,6 +738,624 @@
             const m = Math.floor(seconds / 60).toString().padStart(2, '0');
             const s = (seconds % 60).toString().padStart(2, '0');
             return m + ':' + s;
+        }
+
+        // ==========================================
+        // SCREEN WAKE LOCK (Pantalla siempre activa)
+        // ==========================================
+        let screenWakeLock = null;
+        let wakeLockRequested = false;
+
+        async function requestWakeLock() {
+            if ('wakeLock' in navigator) {
+                try {
+                    screenWakeLock = await navigator.wakeLock.request('screen');
+                    screenWakeLock.addEventListener('release', () => {
+                        screenWakeLock = null;
+                        updateWakeLockUI(false);
+                    });
+                    updateWakeLockUI(true);
+                    return true;
+                } catch (err) {
+                    console.warn('Wake Lock request:', err);
+                    updateWakeLockUI(false);
+                    return false;
+                }
+            }
+            return false;
+        }
+
+        async function releaseWakeLock() {
+            if (screenWakeLock) {
+                try {
+                    await screenWakeLock.release();
+                } catch (e) {}
+                screenWakeLock = null;
+                updateWakeLockUI(false);
+            }
+        }
+
+        function updateWakeLockUI(active) {
+            document.querySelectorAll('.wakelock-dot').forEach(dot => {
+                dot.className = active 
+                    ? 'wakelock-dot w-2 h-2 rounded-full bg-emerald-400 animate-pulse' 
+                    : 'wakelock-dot w-2 h-2 rounded-full bg-slate-500';
+            });
+            document.querySelectorAll('.wakelock-text').forEach(txt => {
+                if (active) {
+                    txt.textContent = 'Pantalla activa';
+                    txt.classList.add('text-emerald-400', 'font-semibold');
+                    txt.classList.remove('text-slate-400');
+                } else {
+                    txt.textContent = 'Pantalla normal';
+                    txt.classList.remove('text-emerald-400', 'font-semibold');
+                    txt.classList.add('text-slate-400');
+                }
+            });
+        }
+
+        function toggleScreenWakeLock() {
+            if (screenWakeLock) {
+                releaseWakeLock();
+            } else {
+                requestWakeLock();
+            }
+        }
+
+        function initAppWakeLock() {
+            if (!wakeLockRequested) {
+                wakeLockRequested = true;
+                requestWakeLock();
+            }
+        }
+        document.addEventListener('click', initAppWakeLock);
+        document.addEventListener('touchstart', initAppWakeLock);
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                requestWakeLock();
+            }
+        });
+
+
+        // ==========================================
+        // SINTETIZADOR DE AUDIO (Web Audio API - Offline)
+        // ==========================================
+        let audioCtx = null;
+        let soundEnabled = true;
+
+        function getAudioContext() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (AudioContext) audioCtx = new AudioContext();
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        function playTone(freq, duration, type = 'sine', volume = 0.25) {
+            if (!soundEnabled) return;
+            try {
+                const ctx = getAudioContext();
+                if (!ctx) return;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, ctx.currentTime);
+                gain.gain.setValueAtTime(0, ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(volume, ctx.currentTime + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + duration);
+            } catch (e) {
+                console.warn('Audio tone error:', e);
+            }
+        }
+
+        function playBeepShort() {
+            playTone(650, 0.08, 'sine', 0.15);
+        }
+
+        function playBeepChange() {
+            // Pitido nítido de aviso de colocación / cambio de lado (2s)
+            playTone(880, 0.18, 'sine', 0.35);
+            if ('vibrate' in navigator) navigator.vibrate(150);
+        }
+
+        function playBeepStartHold() {
+            // Tono enérgico al empezar una serie isométrica
+            playTone(1046, 0.22, 'triangle', 0.35);
+            if ('vibrate' in navigator) navigator.vibrate([100, 50, 100]);
+        }
+
+        function playBeepExerciseChange() {
+            // Doble tono al saltar de ejercicio (Bird-Dog -> Plancha -> Puente)
+            playTone(880, 0.12, 'sine', 0.25);
+            setTimeout(() => playTone(1174, 0.20, 'sine', 0.35), 140);
+            if ('vibrate' in navigator) navigator.vibrate([150, 80, 150]);
+        }
+
+        function playFanfare() {
+            const notes = [523.25, 659.25, 783.99, 1046.50];
+            notes.forEach((freq, idx) => {
+                setTimeout(() => playTone(freq, 0.25, 'sine', 0.3), idx * 140);
+            });
+            if ('vibrate' in navigator) navigator.vibrate([200, 100, 200, 100, 400]);
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const btn = document.getElementById('sound-toggle-btn');
+            const icon = document.getElementById('sound-icon');
+            if (btn && icon) {
+                icon.textContent = soundEnabled ? '🔊' : '🔇';
+                btn.querySelector('span:last-child').textContent = soundEnabled ? 'Pitidos On' : 'Silenciado';
+                btn.className = soundEnabled 
+                    ? 'flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg bg-slate-900/80 hover:bg-slate-700 text-slate-300 border border-slate-700 transition'
+                    : 'flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg bg-rose-950/40 text-rose-300 border border-rose-800/40 transition';
+            }
+        }
+
+
+        // ==========================================
+        // REPRODUCTOR RUTINA PRE-SUEÑO
+        // ==========================================
+        let routineInterval = null;
+        let routineSteps = [];
+        let currentStepIdx = 0;
+        let currentSecondsLeft = 0;
+        let isRoutineRunning = false;
+        let isRoutinePaused = false;
+        let routineSeriesMode = 2; // Default 2 series
+
+        function setRoutineMode(mode) {
+            if (isRoutineRunning) return;
+            routineSeriesMode = mode;
+            document.getElementById('mode-btn-2').className = mode === 2 
+                ? 'px-2.5 py-1 rounded-md font-semibold transition bg-indigo-600 text-white' 
+                : 'px-2.5 py-1 rounded-md font-medium text-slate-400 hover:text-white transition';
+            document.getElementById('mode-btn-1').className = mode === 1 
+                ? 'px-2.5 py-1 rounded-md font-semibold transition bg-indigo-600 text-white' 
+                : 'px-2.5 py-1 rounded-md font-medium text-slate-400 hover:text-white transition';
+            document.getElementById('routine-cur-set').textContent = `Serie 1 de ${mode}`;
+            document.getElementById('routine-progress-counter').textContent = `Paso 0 de ${generateRoutineSteps(mode).length}`;
+        }
+
+        function generateRoutineSteps(numSeries = 2) {
+            const steps = [];
+
+            // Prep
+            steps.push({
+                cardId: 'pre-card-bird-dog',
+                timeId: 'pre-time-bird-dog',
+                badgeId: 'pre-badge-bird-dog',
+                exercise: 'Bird-Dog Isométrico',
+                phase: 'prep',
+                side: 'Prepárate (4 apoyos)',
+                set: 'Inicio de rutina',
+                seconds: 3,
+                sound: 'prep',
+                cue: 'Colócate en cuatro apoyos. Rodillas bajo caderas y manos bajo hombros.'
+            });
+
+            // Bird Dog
+            for (let s = 1; s <= numSeries; s++) {
+                steps.push({
+                    cardId: 'pre-card-bird-dog',
+                    timeId: 'pre-time-bird-dog',
+                    badgeId: 'pre-badge-bird-dog',
+                    exercise: 'Bird-Dog Isométrico',
+                    phase: 'hold',
+                    side: 'Lado Derecho',
+                    set: `Serie ${s} de ${numSeries}`,
+                    seconds: 8,
+                    sound: 'hold',
+                    cue: 'Brazo derecho y pierna izquierda arriba. Pelvis neutra, empuja el talón atrás.'
+                });
+                steps.push({
+                    cardId: 'pre-card-bird-dog',
+                    timeId: 'pre-time-bird-dog',
+                    badgeId: 'pre-badge-bird-dog',
+                    exercise: 'Bird-Dog Isométrico',
+                    phase: 'switch',
+                    side: 'Cambio de Lado',
+                    set: 'Colocación',
+                    seconds: 2,
+                    sound: 'change',
+                    cue: 'Baja y prepara el lado contrario.'
+                });
+                steps.push({
+                    cardId: 'pre-card-bird-dog',
+                    timeId: 'pre-time-bird-dog',
+                    badgeId: 'pre-badge-bird-dog',
+                    exercise: 'Bird-Dog Isométrico',
+                    phase: 'hold',
+                    side: 'Lado Izquierdo',
+                    set: `Serie ${s} de ${numSeries}`,
+                    seconds: 8,
+                    sound: 'hold',
+                    cue: 'Brazo izquierdo y pierna derecha arriba. Cero arqueo lumbar.'
+                });
+                if (s < numSeries) {
+                    steps.push({
+                        cardId: 'pre-card-bird-dog',
+                        timeId: 'pre-time-bird-dog',
+                        badgeId: 'pre-badge-bird-dog',
+                        exercise: 'Bird-Dog Isométrico',
+                        phase: 'switch',
+                        side: 'Cambio a Serie 2',
+                        set: 'Colocación',
+                        seconds: 2,
+                        sound: 'change',
+                        cue: 'Prepárate para la segunda serie de Bird-Dog.'
+                    });
+                }
+            }
+
+            // Transición a Plancha Lateral
+            steps.push({
+                cardId: 'pre-card-plancha-lateral',
+                timeId: 'pre-time-plancha-lateral',
+                badgeId: 'pre-badge-plancha-lateral',
+                exercise: 'Plancha Lateral',
+                phase: 'transition',
+                side: 'Transición a Plancha',
+                set: 'Colocación',
+                seconds: 3,
+                sound: 'exercise_change',
+                cue: 'Túmbate de lado sobre el antebrazo. Codo justo bajo el hombro.'
+            });
+
+            // Plancha Lateral
+            for (let s = 1; s <= numSeries; s++) {
+                steps.push({
+                    cardId: 'pre-card-plancha-lateral',
+                    timeId: 'pre-time-plancha-lateral',
+                    badgeId: 'pre-badge-plancha-lateral',
+                    exercise: 'Plancha Lateral',
+                    phase: 'hold',
+                    side: 'Lado Derecho',
+                    set: `Serie ${s} de ${numSeries}`,
+                    seconds: 40,
+                    sound: 'hold',
+                    cue: 'Eleva la pelvis y aprieta el glúteo fuertemente. Cuerpo en línea recta.'
+                });
+                steps.push({
+                    cardId: 'pre-card-plancha-lateral',
+                    timeId: 'pre-time-plancha-lateral',
+                    badgeId: 'pre-badge-plancha-lateral',
+                    exercise: 'Plancha Lateral',
+                    phase: 'switch',
+                    side: 'Cambio de Lado',
+                    set: 'Colocación',
+                    seconds: 2,
+                    sound: 'change',
+                    cue: 'Gira al otro lado y apoya el antebrazo.'
+                });
+                steps.push({
+                    cardId: 'pre-card-plancha-lateral',
+                    timeId: 'pre-time-plancha-lateral',
+                    badgeId: 'pre-badge-plancha-lateral',
+                    exercise: 'Plancha Lateral',
+                    phase: 'hold',
+                    side: 'Lado Izquierdo',
+                    set: `Serie ${s} de ${numSeries}`,
+                    seconds: 40,
+                    sound: 'hold',
+                    cue: 'Pelvis alta y alineada. No dejes caer la cadera hacia atrás.'
+                });
+                if (s < numSeries) {
+                    steps.push({
+                        cardId: 'pre-card-plancha-lateral',
+                        timeId: 'pre-time-plancha-lateral',
+                        badgeId: 'pre-badge-plancha-lateral',
+                        exercise: 'Plancha Lateral',
+                        phase: 'switch',
+                        side: 'Giro para Serie 2',
+                        set: 'Colocación',
+                        seconds: 3,
+                        sound: 'change',
+                        cue: 'Gira al lado inicial para la Serie 2.'
+                    });
+                }
+            }
+
+            // Transición a Puente de Glúteo Isométrico
+            steps.push({
+                cardId: 'pre-card-puente-gluteo',
+                timeId: 'pre-time-puente-gluteo',
+                badgeId: 'pre-badge-puente-gluteo',
+                exercise: 'Puente de Glúteo Isométrico',
+                phase: 'transition',
+                side: 'Transición a Puente',
+                set: 'Colocación',
+                seconds: 4,
+                sound: 'exercise_change',
+                cue: 'Túmbate boca arriba con rodillas flexionadas y talones firmes en el suelo.'
+            });
+
+            // Puente de Glúteo
+            for (let s = 1; s <= numSeries; s++) {
+                steps.push({
+                    cardId: 'pre-card-puente-gluteo',
+                    timeId: 'pre-time-puente-gluteo',
+                    badgeId: 'pre-badge-puente-gluteo',
+                    exercise: 'Puente de Glúteo Isométrico',
+                    phase: 'hold',
+                    side: 'Elevación de Cadera',
+                    set: `Serie ${s} de ${numSeries}`,
+                    seconds: 30,
+                    sound: 'hold',
+                    cue: 'Empuja talones contra el suelo. Aprieta glúteos arriba sin arquear la lumbar.'
+                });
+                if (s < numSeries) {
+                    steps.push({
+                        cardId: 'pre-card-puente-gluteo',
+                        timeId: 'pre-time-puente-gluteo',
+                        badgeId: 'pre-badge-puente-gluteo',
+                        exercise: 'Puente de Glúteo Isométrico',
+                        phase: 'switch',
+                        side: 'Descanso breve',
+                        set: 'Colocación',
+                        seconds: 3,
+                        sound: 'change',
+                        cue: 'Baja la cadera y respira hondo antes de la última serie.'
+                    });
+                }
+            }
+
+            return steps;
+        }
+
+        function toggleRoutineAction() {
+            if (isRoutineRunning) {
+                if (isRoutinePaused) {
+                    resumeRoutine();
+                } else {
+                    stopRoutine();
+                }
+            } else {
+                startRoutine();
+            }
+        }
+
+        function startRoutine() {
+            requestWakeLock();
+            getAudioContext();
+            routineSteps = generateRoutineSteps(routineSeriesMode);
+            currentStepIdx = 0;
+            isRoutineRunning = true;
+            isRoutinePaused = false;
+
+            const actBtn = document.getElementById('routine-action-btn');
+            actBtn.innerHTML = `
+                <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></svg>
+                <span>Detener</span>
+            `;
+            actBtn.className = 'bg-rose-600 hover:bg-rose-500 text-white font-bold px-5 py-3.5 rounded-xl shadow-lg shadow-rose-600/30 transition-all transform active:scale-95 flex items-center justify-center gap-2 text-sm sm:text-base';
+            
+            document.getElementById('routine-sub-controls').classList.remove('hidden');
+            document.getElementById('routine-status-pill').textContent = 'En ejecución';
+            document.getElementById('routine-status-pill').className = 'text-xs px-2.5 py-0.5 rounded-full font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 animate-pulse';
+
+            runRoutineStep(currentStepIdx);
+        }
+
+        function runRoutineStep(stepIdx) {
+            if (stepIdx >= routineSteps.length) {
+                finishRoutine();
+                return;
+            }
+
+            const step = routineSteps[stepIdx];
+            currentSecondsLeft = step.seconds;
+
+            // Reproducir sonido inicial de fase
+            if (step.sound === 'hold') playBeepStartHold();
+            else if (step.sound === 'change') playBeepChange();
+            else if (step.sound === 'exercise_change') playBeepExerciseChange();
+            else if (step.sound === 'prep') playBeepShort();
+
+            // Iluminar y resaltar la tarjeta activa
+            highlightCard(step);
+
+            // Actualizar panel de control principal
+            updateMasterRoutineUI(step, currentSecondsLeft, stepIdx);
+
+            // Iniciar intervalo de cuenta regresiva
+            clearInterval(routineInterval);
+            routineInterval = setInterval(() => {
+                if (isRoutinePaused) return;
+
+                currentSecondsLeft--;
+                
+                document.getElementById('routine-main-display').textContent = formatTime(currentSecondsLeft);
+                const timeEl = document.getElementById(step.timeId);
+                if (timeEl) timeEl.textContent = formatTime(currentSecondsLeft);
+
+                if (step.phase === 'hold' && currentSecondsLeft <= 3 && currentSecondsLeft > 0) {
+                    playBeepShort();
+                }
+
+                if (currentSecondsLeft <= 0) {
+                    clearInterval(routineInterval);
+                    currentStepIdx++;
+                    runRoutineStep(currentStepIdx);
+                }
+            }, 1000);
+        }
+
+        function highlightCard(step) {
+            const cardIds = ['pre-card-bird-dog', 'pre-card-plancha-lateral', 'pre-card-puente-gluteo'];
+            cardIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                if (id === step.cardId) {
+                    el.classList.add('pre-card-active');
+                    el.classList.remove('pre-card-dimmed');
+                    if (window.innerWidth < 1024) {
+                        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
+                } else {
+                    el.classList.remove('pre-card-active');
+                    el.classList.add('pre-card-dimmed');
+                }
+            });
+
+            const badgeEl = document.getElementById(step.badgeId);
+            if (badgeEl) {
+                if (step.phase === 'hold') {
+                    badgeEl.innerHTML = `<span class="text-emerald-400 font-bold">🟢 ${step.side}</span>`;
+                    badgeEl.className = 'text-xs px-2.5 py-1 rounded-full font-semibold bg-emerald-950/60 border border-emerald-500/40';
+                } else if (step.phase === 'switch') {
+                    badgeEl.innerHTML = `<span class="text-amber-300 font-bold">🟡 ${step.side}</span>`;
+                    badgeEl.className = 'text-xs px-2.5 py-1 rounded-full font-semibold bg-amber-950/60 border border-amber-500/40 animate-pulse';
+                } else {
+                    badgeEl.innerHTML = `<span class="text-indigo-300 font-bold">🔵 ${step.side}</span>`;
+                    badgeEl.className = 'text-xs px-2.5 py-1 rounded-full font-semibold bg-indigo-950/60 border border-indigo-500/40';
+                }
+            }
+        }
+
+        function updateMasterRoutineUI(step, seconds, stepIdx) {
+            document.getElementById('routine-cur-exercise').textContent = step.exercise;
+            document.getElementById('routine-cur-set').textContent = step.set;
+
+            let phaseTitle = '';
+            let actionTag = '';
+            if (step.phase === 'hold') {
+                phaseTitle = `🟢 ${step.side.toUpperCase()}`;
+                actionTag = 'Aguanta la posición';
+            } else if (step.phase === 'switch') {
+                phaseTitle = `🟡 ${step.side.toUpperCase()} (Colócate)`;
+                actionTag = 'Cambio de postura (2s)';
+            } else if (step.phase === 'transition') {
+                phaseTitle = `🔵 SIGUIENTE: ${step.exercise.toUpperCase()}`;
+                actionTag = 'Colócate en el suelo';
+            } else {
+                phaseTitle = `🔵 ${step.side.toUpperCase()}`;
+                actionTag = 'Prepárate para empezar';
+            }
+
+            document.getElementById('routine-cur-phase').textContent = phaseTitle;
+            document.getElementById('routine-cur-action').textContent = actionTag;
+            document.getElementById('routine-cur-cue').textContent = step.cue;
+            document.getElementById('routine-main-display').textContent = formatTime(seconds);
+
+            const total = routineSteps.length;
+            document.getElementById('routine-progress-counter').textContent = `Paso ${stepIdx + 1} de ${total}`;
+            const pct = Math.round(((stepIdx) / total) * 100);
+            document.getElementById('routine-progress-bar').style.width = pct + '%';
+
+            const nextStep = routineSteps[stepIdx + 1];
+            if (nextStep) {
+                document.getElementById('routine-next-step').textContent = `Próximo: ${nextStep.side} (${nextStep.seconds}s)`;
+            } else {
+                document.getElementById('routine-next-step').textContent = 'Próximo: Fin de rutina';
+            }
+        }
+
+        function pauseRoutine() {
+            if (!isRoutineRunning) return;
+            isRoutinePaused = !isRoutinePaused;
+            const pauseBtn = document.getElementById('routine-pause-btn');
+            if (isRoutinePaused) {
+                pauseBtn.innerHTML = `
+                    <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    <span>Reanudar</span>
+                `;
+                pauseBtn.className = 'flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-1.5 px-3 rounded-lg text-xs transition flex items-center justify-center gap-1';
+                document.getElementById('routine-status-pill').textContent = 'Pausado';
+                document.getElementById('routine-status-pill').className = 'text-xs px-2.5 py-0.5 rounded-full font-semibold bg-amber-500/20 text-amber-400 border border-amber-500/30';
+            } else {
+                pauseBtn.innerHTML = `
+                    <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                    <span>Pausar</span>
+                `;
+                pauseBtn.className = 'flex-1 bg-slate-700 hover:bg-slate-600 text-white font-medium py-1.5 px-3 rounded-lg text-xs transition flex items-center justify-center gap-1';
+                document.getElementById('routine-status-pill').textContent = 'En ejecución';
+                document.getElementById('routine-status-pill').className = 'text-xs px-2.5 py-0.5 rounded-full font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 animate-pulse';
+            }
+        }
+
+        function resumeRoutine() {
+            if (isRoutinePaused) pauseRoutine();
+        }
+
+        function stopRoutine() {
+            clearInterval(routineInterval);
+            isRoutineRunning = false;
+            isRoutinePaused = false;
+
+            const actBtn = document.getElementById('routine-action-btn');
+            actBtn.innerHTML = `
+                <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                <span>Iniciar Rutina</span>
+            `;
+            actBtn.className = 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-5 py-3.5 rounded-xl shadow-lg shadow-emerald-500/25 transition-all transform active:scale-95 flex items-center justify-center gap-2 text-sm sm:text-base';
+            
+            document.getElementById('routine-sub-controls').classList.add('hidden');
+            document.getElementById('routine-status-pill').textContent = 'En espera';
+            document.getElementById('routine-status-pill').className = 'text-xs px-2.5 py-0.5 rounded-full font-semibold bg-slate-700 text-slate-300';
+            document.getElementById('routine-cur-exercise').textContent = 'Bird-Dog Isométrico';
+            document.getElementById('routine-cur-set').textContent = `Serie 1 de ${routineSeriesMode}`;
+            document.getElementById('routine-cur-phase').textContent = 'Pulsa «Iniciar» para comenzar';
+            document.getElementById('routine-cur-action').textContent = 'Listo para empezar';
+            document.getElementById('routine-cur-cue').textContent = 'Te avisará con pitidos a los 8s, 2s para colocarte y continuará con la plancha y el puente sin tocar el móvil.';
+            document.getElementById('routine-main-display').textContent = '00:08';
+            document.getElementById('routine-progress-counter').textContent = `Paso 0 de ${generateRoutineSteps(routineSeriesMode).length}`;
+            document.getElementById('routine-progress-bar').style.width = '0%';
+            document.getElementById('routine-next-step').textContent = 'Próximo: Bird-Dog Lado Derecho (8s)';
+
+            resetAllCards();
+        }
+
+        function resetAllCards() {
+            const cardIds = ['pre-card-bird-dog', 'pre-card-plancha-lateral', 'pre-card-puente-gluteo'];
+            cardIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.classList.remove('pre-card-active', 'pre-card-dimmed');
+                }
+            });
+
+            const t1 = document.getElementById('pre-time-bird-dog');
+            if (t1) t1.textContent = '00:08';
+            const b1 = document.getElementById('pre-badge-bird-dog');
+            if (b1) {
+                b1.textContent = '8s / lado';
+                b1.className = 'text-xs px-2.5 py-1 rounded-full font-semibold bg-slate-800 text-slate-400 border border-slate-700';
+            }
+
+            const t2 = document.getElementById('pre-time-plancha-lateral');
+            if (t2) t2.textContent = '00:40';
+            const b2 = document.getElementById('pre-badge-plancha-lateral');
+            if (b2) {
+                b2.textContent = '40s / lado';
+                b2.className = 'text-xs px-2.5 py-1 rounded-full font-semibold bg-slate-800 text-slate-400 border border-slate-700';
+            }
+
+            const t3 = document.getElementById('pre-time-puente-gluteo');
+            if (t3) t3.textContent = '00:30';
+            const b3 = document.getElementById('pre-badge-puente-gluteo');
+            if (b3) {
+                b3.textContent = '30s iso';
+                b3.className = 'text-xs px-2.5 py-1 rounded-full font-semibold bg-slate-800 text-slate-400 border border-slate-700';
+            }
+        }
+
+        function finishRoutine() {
+            clearInterval(routineInterval);
+            isRoutineRunning = false;
+            isRoutinePaused = false;
+            playFanfare();
+            stopRoutine();
+            document.getElementById('routine-progress-bar').style.width = '100%';
+            showAlertModal('¡Rutina Pre-Sueño completada! 🌙\nHas completado las series de activación isométrica. Tus multífidos están encendidos para estabilizar la columna L5-S1 durante el descanso nocturno.');
         }
 
         function playSuccessSound() {

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lumbar-l5s1-pwa-v7';
+const CACHE_NAME = 'lumbar-l5s1-pwa-v9';
 const ASSETS = [
   './',
   './index.html',
